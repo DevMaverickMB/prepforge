@@ -1,15 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { format } from "date-fns";
-import { DayCounter } from "@/components/dashboard/DayCounter";
-import { StreakCounter } from "@/components/dashboard/StreakCounter";
-import { MetricCards } from "@/components/dashboard/MetricCards";
-import { TodayChecklist } from "@/components/dashboard/TodayChecklist";
-import { WeeklyProgressRing } from "@/components/dashboard/WeeklyProgressRing";
-import { ActivityHeatmap } from "@/components/dashboard/ActivityHeatmap";
-import { UpcomingSection } from "@/components/dashboard/UpcomingSection";
+import { BentoDashboard } from "@/components/dashboard/BentoDashboard";
 import { SeedTrigger } from "@/components/dashboard/SeedTrigger";
-import { DailyQuote } from "@/components/dashboard/DailyQuote";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -97,70 +90,27 @@ export default async function DashboardPage() {
   // Streak
   const streak = profile?.daily_streak ?? 0;
 
-  // Week progress: how many tasks are done this week
   const weekTasks = weekLogs ?? [];
-  const totalWeekSlots = weekTasks.length * 4;
-  const doneWeekSlots = weekTasks.reduce((acc, log) => {
-    let count = 0;
-    if (log.morning_done) count++;
-    if (log.evening_7pm_done) count++;
-    if (log.evening_9pm_done) count++;
-    if (log.evening_10pm_done) count++;
-    return acc + count;
-  }, 0);
-  const weekProgress = totalWeekSlots > 0 ? Math.round((doneWeekSlots / totalWeekSlots) * 100) : 0;
 
   return (
-    <div className="space-y-12">
-      {/* Top bar: Day counter + streak */}
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between border-b border-border/40 pb-6">
-        <DayCounter
-          prepStartDate={profile?.prep_start_date ?? today}
-          totalDays={98}
-        />
-        <StreakCounter streak={streak} />
-      </div>
-
-      {/* Daily Quote Center Section */}
-      <div className="w-full">
-        <DailyQuote />
-      </div>
-
-      {/* Metric cards */}
-      <MetricCards
-        lcSolved={lcSolved}
-        lcTotal={350}
-        topicsCompleted={completedTopics}
-        topicsTotal={totalTopics}
-        projectsCompleted={completedProjects}
-        projectsTotal={projects?.length ?? 3}
-        applicationsSent={applicationsSent}
-        applicationsTotal={70}
-        scheduledInterviews={scheduledInterviews}
-      />
-
-      {/* Main content grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Today's checklist */}
-        <div className="lg:col-span-2">
-          <TodayChecklist
-            log={todayLog}
-            weekNumber={todayLog?.week_number ?? null}
-          />
-        </div>
-
-        {/* Right sidebar */}
-        <div className="space-y-6">
-          <WeeklyProgressRing progress={weekProgress} />
-          <ActivityHeatmap weekLogs={weekTasks} />
-          <UpcomingSection
-            projects={projects ?? []}
-            companies={companies ?? []}
-            mockCount={mockInterviews?.length ?? 0}
-          />
-        </div>
-      </div>
-    </div>
+    <BentoDashboard
+      streak={streak}
+      todayLog={todayLog}
+      weekNumber={todayLog?.week_number ?? null}
+      initialWeekLogs={weekTasks}
+      lcSolved={lcSolved}
+      lcTotal={350}
+      topicsCompleted={completedTopics}
+      topicsTotal={totalTopics}
+      projectsCompleted={completedProjects}
+      projectsTotal={projects?.length ?? 3}
+      applicationsSent={applicationsSent}
+      applicationsTotal={70}
+      scheduledInterviews={scheduledInterviews}
+      projects={projects ?? []}
+      companies={companies ?? []}
+      mockCount={mockInterviews?.length ?? 0}
+    />
   );
 }
 

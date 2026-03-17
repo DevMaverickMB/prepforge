@@ -11,10 +11,12 @@ export default async function PlannerPage() {
   const startDate = prepStartDate ?? format(new Date(), "yyyy-MM-dd");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Weekly Planner</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-[22px] font-bold tracking-tight text-foreground">
+          Weekly Planner
+        </h1>
+        <p className="text-[13px] text-muted-foreground mt-1">
           14-week prep calendar. Click any day to view tasks and log your progress.
         </p>
       </div>

@@ -1,94 +1,175 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Copy, Check } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Flame } from "lucide-react";
 
-const QUOTES = [
-    "The only way to do great work is to love what you do.",
-    "Success is not final, failure is not fatal: it is the courage to continue that counts.",
-    "Believe you can and you're halfway there.",
-    "Your time is limited, don't waste it living someone else's life.",
-    "I find that the harder I work, the more luck I seem to have.",
-    "The secret of getting ahead is getting started.",
-    "Do what you can, with what you have, where you are.",
-    "Continuous improvement is better than delayed perfection.",
-    "Discipline equals freedom.",
-    "It always seems impossible until it's done."
-];
+interface DailyQuoteProps {
+  streak?: number;
+}
 
-export function DailyQuote() {
-    const [quote, setQuote] = useState("");
-    const [copied, setCopied] = useState(false);
+export function DailyQuote({ streak = 0 }: DailyQuoteProps) {
+  const [quote, setQuote] = useState("");
+  const [author, setAuthor] = useState("");
 
-    useEffect(() => {
-        // Pick a deterministic quote based on the day of the year
-        const dayOfYear = Math.floor(
-            (new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
-            1000 /
-            60 /
-            60 /
-            24
-        );
-        setQuote(QUOTES[dayOfYear % QUOTES.length]);
-    }, []);
+  const fetchQuote = useCallback(async () => {
+    try {
+      const res = await fetch("/api/quote");
+      if (res.ok) {
+        const data = await res.json();
+        setQuote(data.quote);
+        setAuthor(data.author);
+      }
+    } catch {
+      // silently keep the current quote
+    }
+  }, []);
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(quote);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
+  useEffect(() => {
+    fetchQuote();
+    const interval = setInterval(fetchQuote, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [fetchQuote]);
 
-    if (!quote) return null;
+  if (!quote) return null;
 
-    return (
-        <div className="relative w-full overflow-hidden rounded-2xl border border-black/5 dark:border-white/[0.08] bg-zinc-50 dark:bg-[#0a0a0a] p-1 shadow-sm">
-            {/* Inner container for the actual card */}
-            <div className="relative flex min-h-[100px] w-full flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden rounded-xl bg-white dark:bg-[#0e0e0e] px-8 py-6 ring-1 ring-black/5 dark:ring-0">
+  // Dimensions for the cutout
+  const cutoutW = 180; // px width of the top-right cutout
+  const cutoutH = 50;  // px height of the top-right cutout
+  const r = 20;        // inner concave corner radius
+  const sr = 12;       // small outward junction corner radius
 
-                {/* Decorative subtle dot pattern mimicking the reference image */}
-                <div
-                    className="pointer-events-none absolute inset-0 opacity-[0.04] dark:opacity-[0.15]"
-                    style={{
-                        backgroundImage: `radial-gradient(currentColor 1px, transparent 1px)`,
-                        backgroundSize: "16px 16px",
-                        maskImage: "radial-gradient(ellipse at left center, black 10%, transparent 60%)",
-                        WebkitMaskImage: "radial-gradient(ellipse at left center, black 10%, transparent 60%)"
-                    }}
-                />
+  return (
+    <div className="relative w-full">
+      {/* The full card */}
+      <div className="relative rounded-[20px] border border-white/[0.06] bg-[#0c0c0c] min-h-[100px] overflow-hidden">
+        {/* Dot texture on the left */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.14]"
+          style={{
+            backgroundImage: `radial-gradient(rgba(255,255,255,0.7) 1px, transparent 1px)`,
+            backgroundSize: "14px 14px",
+            maskImage: "radial-gradient(ellipse 50% 80% at 20% 50%, black 0%, transparent 80%)",
+            WebkitMaskImage: "radial-gradient(ellipse 50% 80% at 20% 50%, black 0%, transparent 80%)",
+          }}
+        />
 
-                {/* Content */}
-                <div className="relative z-10 flex flex-1 flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-6">
-                    <p className="text-lg font-medium tracking-tight text-zinc-800 dark:text-white/95 leading-relaxed sm:text-xl md:text-2xl">
-                        "{quote}"
-                    </p>
-                </div>
-
-                {/* Right side actions and badge */}
-                <div className="relative z-10 flex shrink-0 items-center gap-4 self-end sm:self-center">
-                    {/* pill badge entirely like the reference "s PRO" */}
-                    <div className="hidden sm:flex items-center gap-2 rounded-full border border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-1 font-mono text-xs font-semibold tracking-wider text-zinc-600 dark:text-white/70 backdrop-blur-md">
-                        <span className="flex h-4 w-4 items-center justify-center rounded-[4px] bg-black/10 dark:bg-white/10 text-[10px]">
-                            Q
-                        </span>
-                        DAILY
-                    </div>
-
-                    <button
-                        onClick={handleCopy}
-                        className="group flex h-12 w-12 items-center justify-center rounded-xl border border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-95"
-                        aria-label="Copy quote"
-                    >
-                        {copied ? (
-                            <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
-                        ) : (
-                            <Copy className="h-5 w-5 text-zinc-500 dark:text-white/60 transition-colors group-hover:text-zinc-900 dark:group-hover:text-white" />
-                        )}
-                    </button>
-                </div>
-
-                {/* Subtle glow effect behind the button like the reference */}
-                <div className="pointer-events-none absolute right-4 top-1/2 h-32 w-32 -translate-y-1/2 rounded-full bg-blue-500/5 dark:bg-white/[0.02] blur-2xl" />
-            </div>
+        {/* Quote text — vertically centered */}
+        <div className="relative z-10 px-7 pr-[200px] flex items-center min-h-[100px]">
+          <div>
+            <p className="text-[17px] sm:text-[19px] lg:text-[21px] font-semibold tracking-tight text-white leading-snug italic">
+              &ldquo;{quote}&rdquo;
+            </p>
+            {author && (
+              <p className="mt-1.5 text-[13px] font-medium text-white/40 tracking-wide">
+                — {author}
+              </p>
+            )}
+          </div>
         </div>
-    );
+
+        {/*
+          Top-right cutout overlay:
+          Rounded at bottom-left (concave inner curve) + top-left and bottom-right (junction curves).
+        */}
+        <div
+          className="absolute top-[-1px] right-[-1px] z-20 bg-background"
+          style={{
+            width: cutoutW + 1,
+            height: cutoutH + 1,
+            borderBottomLeftRadius: r,
+            borderTopLeftRadius: sr,
+            borderBottomRightRadius: sr,
+          }}
+        />
+
+        {/* === Border reconstruction === */}
+
+        {/* Top edge (left of cutout, shortened for junction arc) */}
+        <div
+          className="absolute z-30 h-[1px] bg-white/[0.06]"
+          style={{ top: 0, left: 0, right: cutoutW + sr }}
+        />
+
+        {/* Junction 1 arc: top-right turn from top edge into cutout left edge */}
+        <div
+          className="absolute z-30 pointer-events-none"
+          style={{
+            top: 0,
+            right: cutoutW,
+            width: sr,
+            height: sr,
+            borderTopRightRadius: sr,
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+            borderRight: "1px solid rgba(255,255,255,0.06)",
+          }}
+        />
+
+        {/* Left edge of cutout (vertical, between junction 1 arc and concave arc) */}
+        <div
+          className="absolute z-30 w-[1px] bg-white/[0.06]"
+          style={{ top: sr, right: cutoutW, height: cutoutH - r - sr }}
+        />
+
+        {/* Concave inner corner arc (bottom-left radius) */}
+        <div
+          className="absolute z-30 pointer-events-none"
+          style={{
+            top: cutoutH - r,
+            right: cutoutW - r,
+            width: r,
+            height: r,
+            borderBottomLeftRadius: r,
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            borderLeft: "1px solid rgba(255,255,255,0.06)",
+          }}
+        />
+
+        {/* Bottom edge of cutout (horizontal, between concave arc and junction 2 arc) */}
+        <div
+          className="absolute z-30 h-[1px] bg-white/[0.06]"
+          style={{ top: cutoutH, right: sr, width: cutoutW - r - sr }}
+        />
+
+        {/* Junction 2 arc: top-right turn from cutout bottom into card right edge */}
+        <div
+          className="absolute z-30 pointer-events-none"
+          style={{
+            top: cutoutH,
+            right: 0,
+            width: sr,
+            height: sr,
+            borderTopRightRadius: sr,
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+            borderRight: "1px solid rgba(255,255,255,0.06)",
+          }}
+        />
+
+        {/* Right edge of card (below junction 2 arc) */}
+        <div
+          className="absolute z-30 w-[1px] bg-white/[0.06]"
+          style={{ top: cutoutH + sr, right: 0, bottom: 0 }}
+        />
+      </div>
+
+      {/* Streak pill — positioned in the cutout area, outside the card */}
+      <div
+        className="absolute z-40 flex items-center justify-center"
+        style={{ top: 0, right: 0, width: cutoutW, height: cutoutH }}
+      >
+        {streak === 0 ? (
+          <div className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-2 backdrop-blur-sm">
+            <Flame className="h-4 w-4 text-muted-foreground" />
+            <span className="text-[13px] font-semibold text-muted-foreground">No active streak</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 rounded-full border border-orange-500/25 bg-orange-500/10 px-4 py-2 backdrop-blur-sm">
+            <Flame className="h-4 w-4 text-orange-400" strokeWidth={2.5} />
+            <span className="text-[13px] font-bold text-orange-400">
+              {streak} day streak
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

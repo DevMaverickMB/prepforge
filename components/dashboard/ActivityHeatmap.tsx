@@ -26,7 +26,7 @@ export function ActivityHeatmap({ weekLogs }: ActivityHeatmapProps) {
   }
 
   return (
-    <Card className="border border-border/50 bg-card rounded-2xl shadow-sm overflow-hidden">
+    <Card className="border border-border/50 bg-card rounded-2xl shadow-sm overflow-hidden h-full">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 px-6 py-5 border-b border-border/40 bg-muted/20">
         <CardTitle className="text-[15px] font-semibold text-foreground tracking-tight">Week Heatmap</CardTitle>
         <div className="flex gap-1 opacity-50 cursor-pointer hover:opacity-100 transition-opacity">

@@ -34,7 +34,7 @@ export default async function AppLayout({
           prepStartDate={profile?.prep_start_date}
           streak={profile?.daily_streak ?? 0}
         />
-        <main className="flex-1 overflow-auto p-6 md:p-10 pb-24 md:pb-12 bg-background">
+        <main className="flex-1 overflow-auto px-6 pt-4 pb-24 md:px-10 md:pt-4 md:pb-12 bg-background">
           <div className="mx-auto max-w-[1400px]">
             {children}
           </div>
