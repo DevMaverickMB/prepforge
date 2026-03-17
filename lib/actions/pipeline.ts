@@ -62,6 +62,7 @@ export async function addCompany(data: {
   name: string;
   tier?: string;
   role_title?: string;
+  careers_page_url?: string;
   application_status?: string;
 }) {
   const supabase = await createClient();
@@ -70,16 +71,17 @@ export async function addCompany(data: {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
-  const { error } = await supabase.from("companies").insert({
+  const { data: inserted, error } = await supabase.from("companies").insert({
     user_id: user.id,
     name: data.name,
     tier: (data.tier as "tier_1" | "tier_2" | "tier_3") ?? null,
     role_title: data.role_title ?? null,
+    careers_page_url: data.careers_page_url ?? null,
     application_status:
       (data.application_status as "researching") ?? "researching",
-  });
+  }).select().single();
 
   if (error) return { error: error.message };
   revalidatePath("/pipeline");
-  return { success: true };
+  return { success: true, company: inserted };
 }

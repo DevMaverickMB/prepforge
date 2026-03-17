@@ -5,7 +5,7 @@ import { WeekendView } from "@/components/planner/WeekendView";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO, addDays, subDays, isValid } from "date-fns";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -40,7 +40,7 @@ export default async function DayPage({ params }: DayPageProps) {
         <div className="flex items-center gap-3">
           <Link href="/planner">
             <Button variant="ghost" size="icon">
-              <Calendar className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
           <div>

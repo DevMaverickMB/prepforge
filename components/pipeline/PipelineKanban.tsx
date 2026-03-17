@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { updateCompany, addCompany } from "@/lib/actions/pipeline";
-import { Plus, Star, ArrowRight, ArrowLeft, Building2, Layers, Trophy } from "lucide-react";
+import { Plus, Star, ArrowRight, ArrowLeft, Building2, Layers, Trophy, Search, Filter } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import type { Company } from "@/types/supabase";
@@ -63,6 +63,23 @@ export function PipelineKanban({ initialCompanies }: PipelineKanbanProps) {
   const [newName, setNewName] = useState("");
   const [newTier, setNewTier] = useState("tier_2");
   const [newRole, setNewRole] = useState("");
+  const [newCareersUrl, setNewCareersUrl] = useState("");
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+
+  // Unique roles for filter
+  const uniqueRoles = Array.from(
+    new Set(initialCompanies.map((c) => c.role_title).filter(Boolean))
+  ) as string[];
+
+  // Filtered companies
+  const filteredCompanies = companies.filter((c) => {
+    const q = search.toLowerCase();
+    if (q && !c.name.toLowerCase().includes(q) && !(c.role_title?.toLowerCase().includes(q)))
+      return false;
+    if (roleFilter && c.role_title !== roleFilter) return false;
+    return true;
+  });
 
   const totalApplied = companies.filter(
     (c) => !["researching", "ready_to_apply"].includes(c.application_status)
@@ -87,13 +104,18 @@ export function PipelineKanban({ initialCompanies }: PipelineKanbanProps) {
       name: newName.trim(),
       tier: newTier,
       role_title: newRole || undefined,
+      careers_page_url: newCareersUrl.trim() || undefined,
     });
     if (result.error) {
       toast.error(result.error);
     } else {
+      if (result.company) {
+        setCompanies((prev) => [...prev, result.company as Company]);
+      }
       toast.success("Company added to pipeline");
       setNewName("");
       setNewRole("");
+      setNewCareersUrl("");
       setAddModalOpen(false);
       router.refresh();
     }
@@ -138,11 +160,38 @@ export function PipelineKanban({ initialCompanies }: PipelineKanbanProps) {
         </Button>
       </div>
 
+      {/* Search & Filters */}
+      <div className="flex items-center gap-3 flex-shrink-0 flex-wrap">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search companies or roles..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 rounded-xl h-9"
+          />
+        </div>
+        <Filter className="h-4 w-4 text-muted-foreground" />
+        <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v === "__all__" ? "" : v)}>
+          <SelectTrigger className="w-40 rounded-xl h-9">
+            <SelectValue placeholder="All Roles" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="__all__">All Roles</SelectItem>
+            {uniqueRoles.map((role) => (
+              <SelectItem key={role} value={role}>
+                {role}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Kanban board */}
       <div className="flex-1 min-h-0 overflow-x-auto [&::-webkit-scrollbar]:h-[5px] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-muted/20 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/60 hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
         <div className="flex gap-3 h-full pb-2" style={{ minWidth: "max-content" }}>
           {PIPELINE_COLUMNS.map((col) => {
-            const colCompanies = companies.filter(
+            const colCompanies = filteredCompanies.filter(
               (c) => c.application_status === col.key
             );
             const colIndex = PIPELINE_COLUMNS.findIndex((c) => c.key === col.key);
@@ -286,6 +335,18 @@ export function PipelineKanban({ initialCompanies }: PipelineKanbanProps) {
                 value={newRole}
                 onChange={(e) => setNewRole(e.target.value)}
                 placeholder="ML Engineer"
+                className="rounded-xl h-10"
+                onKeyDown={(e) => e.key === "Enter" && handleAddCompany()}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[13px] font-medium text-muted-foreground">
+                Careers Page <span className="text-muted-foreground/40">(optional)</span>
+              </label>
+              <Input
+                value={newCareersUrl}
+                onChange={(e) => setNewCareersUrl(e.target.value)}
+                placeholder="https://careers.google.com"
                 className="rounded-xl h-10"
                 onKeyDown={(e) => e.key === "Enter" && handleAddCompany()}
               />

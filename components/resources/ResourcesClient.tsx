@@ -62,8 +62,8 @@ interface ResourcesClientProps {
 
 export function ResourcesClient({ resources }: ResourcesClientProps) {
   const [search, setSearch] = useState("");
-  const [topicFilter, setTopicFilter] = useState("all");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [topicFilter, setTopicFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [addOpen, setAddOpen] = useState(false);
 
   // Add form
@@ -75,8 +75,8 @@ export function ResourcesClient({ resources }: ResourcesClientProps) {
   const filtered = resources.filter((r) => {
     if (search && !r.title.toLowerCase().includes(search.toLowerCase()))
       return false;
-    if (topicFilter !== "all" && r.topic !== topicFilter) return false;
-    if (categoryFilter !== "all" && r.category !== categoryFilter) return false;
+    if (topicFilter && r.topic !== topicFilter) return false;
+    if (categoryFilter && r.category !== categoryFilter) return false;
     return true;
   });
 
@@ -212,12 +212,12 @@ export function ResourcesClient({ resources }: ResourcesClientProps) {
           />
         </div>
         <Filter className="h-4 w-4 text-muted-foreground" />
-        <Select value={topicFilter} onValueChange={(v) => v && setTopicFilter(v)}>
+        <Select value={topicFilter} onValueChange={(v) => setTopicFilter(v === "__all__" ? "" : v)}>
           <SelectTrigger className="w-36">
-            <SelectValue placeholder="Topic" />
+            <SelectValue placeholder="All Topics" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Topics</SelectItem>
+            <SelectItem value="__all__">All Topics</SelectItem>
             {TOPICS.map((t) => (
               <SelectItem key={t} value={t}>
                 {TOPIC_LABELS[t] ?? t}
@@ -225,12 +225,12 @@ export function ResourcesClient({ resources }: ResourcesClientProps) {
             ))}
           </SelectContent>
         </Select>
-        <Select value={categoryFilter} onValueChange={(v) => v && setCategoryFilter(v)}>
+        <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v === "__all__" ? "" : v)}>
           <SelectTrigger className="w-32">
-            <SelectValue placeholder="Category" />
+            <SelectValue placeholder="All Types" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="__all__">All Types</SelectItem>
             {CATEGORIES.map((c) => (
               <SelectItem key={c} value={c}>
                 {c}

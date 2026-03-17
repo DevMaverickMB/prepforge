@@ -75,7 +75,7 @@ interface BehavioralClientProps {
 
 export function BehavioralClient({ stories }: BehavioralClientProps) {
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [practiceMode, setPracticeMode] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -161,7 +161,7 @@ export function BehavioralClient({ stories }: BehavioralClientProps) {
     if (search && !s.title.toLowerCase().includes(search.toLowerCase())) {
       return false;
     }
-    if (categoryFilter !== "all" && s.category !== categoryFilter) {
+    if (categoryFilter && s.category !== categoryFilter) {
       return false;
     }
     return true;
@@ -245,12 +245,12 @@ export function BehavioralClient({ stories }: BehavioralClientProps) {
         </div>
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
-          <Select value={categoryFilter} onValueChange={(v) => v && setCategoryFilter(v)}>
+          <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v === "__all__" ? "" : v)}>
             <SelectTrigger className="w-44">
-              <SelectValue placeholder="Category" />
+              <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="__all__">All Categories</SelectItem>
               {CATEGORIES.map((c) => (
                 <SelectItem key={c} value={c}>
                   {c}

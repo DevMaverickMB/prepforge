@@ -1,12 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -17,13 +25,47 @@ import {
 import { updateCompany } from "@/lib/actions/pipeline";
 import { toast } from "sonner";
 import type { Company, InterviewRound } from "@/types/supabase";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Pencil, Plus, Save, Star, Trash2 } from "lucide-react";
 
 interface CompanyDetailClientProps {
   company: Company;
 }
 
 export function CompanyDetailClient({ company }: CompanyDetailClientProps) {
+  const router = useRouter();
+  const [editOpen, setEditOpen] = useState(false);
+  const [editName, setEditName] = useState(company.name);
+  const [editTier, setEditTier] = useState(company.tier ?? "tier_2");
+  const [editCareersUrl, setEditCareersUrl] = useState(company.careers_page_url ?? "");
+  const [editBlogUrl, setEditBlogUrl] = useState(company.engineering_blog_url ?? "");
+
+  const [companyName, setCompanyName] = useState(company.name);
+  const [companyTier, setCompanyTier] = useState(company.tier);
+  const [companyCareersUrl, setCompanyCareersUrl] = useState(company.careers_page_url);
+  const [companyBlogUrl, setCompanyBlogUrl] = useState(company.engineering_blog_url);
+
+  const tierStars = companyTier === "tier_1" ? 3 : companyTier === "tier_2" ? 2 : 1;
+
+  async function handleEditSave() {
+    const result = await updateCompany(company.id, {
+      name: editName.trim(),
+      tier: editTier,
+      careers_page_url: editCareersUrl.trim() || null,
+      engineering_blog_url: editBlogUrl.trim() || null,
+    });
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      setCompanyName(editName.trim());
+      setCompanyTier(editTier as Company["tier"]);
+      setCompanyCareersUrl(editCareersUrl.trim() || null);
+      setCompanyBlogUrl(editBlogUrl.trim() || null);
+      toast.success("Company details updated");
+      setEditOpen(false);
+      router.refresh();
+    }
+  }
+
   const [status, setStatus] = useState(company.application_status);
   const [roleTitle, setRoleTitle] = useState(company.role_title ?? "");
   const [referrerName, setReferrerName] = useState(company.referrer_name ?? "");
@@ -84,6 +126,136 @@ export function CompanyDetailClient({ company }: CompanyDetailClientProps) {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Link href="/pipeline">
+          <Button variant="ghost" size="icon">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Link>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">
+              {companyName}
+            </h1>
+            <div className="flex">
+              {Array.from({ length: tierStars }).map((_, i) => (
+                <Star
+                  key={i}
+                  className="h-4 w-4 fill-yellow-400 text-yellow-400"
+                />
+              ))}
+            </div>
+          </div>
+          {company.role_title && (
+            <p className="text-muted-foreground">{company.role_title}</p>
+          )}
+        </div>
+        <div className="flex gap-2">
+          {companyCareersUrl && (
+            <a
+              href={companyCareersUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" size="sm">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Careers
+              </Button>
+            </a>
+          )}
+          {companyBlogUrl && (
+            <a
+              href={companyBlogUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" size="sm">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Blog
+              </Button>
+            </a>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setEditName(companyName);
+              setEditTier(companyTier ?? "tier_2");
+              setEditCareersUrl(companyCareersUrl ?? "");
+              setEditBlogUrl(companyBlogUrl ?? "");
+              setEditOpen(true);
+            }}
+          >
+            <Pencil className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
+        </div>
+      </div>
+
+      {/* Edit Company Modal */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="rounded-2xl overflow-visible sm:max-w-md">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-[18px] font-bold">Edit Company</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 pt-1">
+            <div className="space-y-2">
+              <Label className="text-[13px] font-medium text-muted-foreground">Company Name</Label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Google"
+                className="rounded-xl h-10"
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[13px] font-medium text-muted-foreground">Tier</Label>
+              <Select value={editTier} onValueChange={(v) => v && setEditTier(v)}>
+                <SelectTrigger className="rounded-xl h-10 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl" sideOffset={4}>
+                  <SelectItem value="tier_1">⭐⭐⭐ Tier 1 — Dream</SelectItem>
+                  <SelectItem value="tier_2">⭐⭐ Tier 2 — Target</SelectItem>
+                  <SelectItem value="tier_3">⭐ Tier 3 — Safety</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[13px] font-medium text-muted-foreground">
+                Careers Page URL <span className="text-muted-foreground/40">(optional)</span>
+              </Label>
+              <Input
+                value={editCareersUrl}
+                onChange={(e) => setEditCareersUrl(e.target.value)}
+                placeholder="https://careers.google.com"
+                className="rounded-xl h-10"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[13px] font-medium text-muted-foreground">
+                Engineering Blog URL <span className="text-muted-foreground/40">(optional)</span>
+              </Label>
+              <Input
+                value={editBlogUrl}
+                onChange={(e) => setEditBlogUrl(e.target.value)}
+                placeholder="https://engineering.google.com"
+                className="rounded-xl h-10"
+              />
+            </div>
+            <Button
+              onClick={handleEditSave}
+              disabled={!editName.trim()}
+              className="w-full rounded-xl h-10 font-semibold mt-2"
+            >
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Status and Role */}
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
